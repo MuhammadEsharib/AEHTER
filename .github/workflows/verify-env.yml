@@ -1,0 +1,32 @@
+name: Verify Env Files
+
+# This workflow runs on pushes and pull requests to ensure that .env files are not committed.
+# It aborts the build if a .env file is found in the repository.
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  check-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # Prevent accidental token usage that could push changes
+          persist-credentials: false
+
+      - name: Verify .env is not present
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "❗ .env file detected in repository. Please remove it and ensure it is listed in .gitignore."
+            exit 1
+          fi
+          # Also check for any .env.* files that might have been accidentally added
+          if git ls-files --error-unmatch ".env*" | grep -v "\.env.example" >/dev/null 2>&1; then
+            echo "❗ Additional .env files detected in repository."
+            exit 1
+          fi
